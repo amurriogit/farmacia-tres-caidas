@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { AlertTriangle, TrendingUp, Package, Printer, Calendar } from 'lucide-react';
+import { AlertTriangle, TrendingUp, Package, Printer, Calendar, DollarSign, Wallet } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 export const Reports = () => {
@@ -41,11 +41,18 @@ export const Reports = () => {
       total: salesByDate[date]
   })).sort((a,b) => a.date.localeCompare(b.date));
 
+  // FINANCIAL CALCULATIONS
   const totalIncome = filteredSales.reduce((sum, s) => sum + s.total, 0);
+  
+  // Calculate Profit based on sales (Sale Price - Product Cost)
+  // FIX: Added (item.cost || 0) to handle historical sales that didn't have cost recorded
   const estimatedProfit = filteredSales.reduce((sum, s) => {
-      const saleCost = s.items.reduce((cSum, item) => cSum + (item.cost * item.saleQuantity), 0);
+      const saleCost = s.items.reduce((cSum, item) => cSum + ((item.cost || 0) * item.saleQuantity), 0);
       return sum + (s.total - saleCost);
   }, 0);
+
+  // Calculate Patrimony (Inventory Value) = Sum(Quantity * Cost)
+  const totalPatrimony = products.reduce((sum, p) => sum + (p.quantity * p.cost), 0);
 
   const handlePrint = () => {
       const content = document.getElementById('printable-report');
@@ -63,18 +70,29 @@ export const Reports = () => {
                       th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
                       th { background-color: #f2f2f2; }
                       .header { margin-bottom: 30px; text-align: center; }
+                      .financials { display: flex; justify-content: space-between; margin-bottom: 20px; border: 1px solid #ccc; padding: 10px; }
                     </style>
                   </head>
                   <body>
                     <div class="header">
                         <h1>${config.name}</h1>
-                        <p>Reporte de Ventas</p>
-                        <p>Fecha: ${startDate || 'Inicio'} a ${endDate || 'Hoy'}</p>
+                        <p>Reporte Diario de Movimientos</p>
+                        <p>Fecha de Corte: ${new Date().toLocaleDateString()}</p>
+                        <p>Rango: ${startDate || 'Inicio'} a ${endDate || 'Hoy'}</p>
                     </div>
-                    <div>
-                        <p><strong>Total Ventas:</strong> Bs ${totalIncome.toFixed(2)}</p>
-                        <p><strong>Ganancia Est.:</strong> Bs ${estimatedProfit.toFixed(2)}</p>
+                    
+                    <h3>Resumen Financiero</h3>
+                    <div class="financials">
+                        <div>
+                            <p><strong>Total Ventas (Ingresos):</strong> Bs ${totalIncome.toFixed(2)}</p>
+                            <p><strong>Ganancia Neta Estimada:</strong> Bs ${estimatedProfit.toFixed(2)}</p>
+                        </div>
+                        <div style="text-align: right;">
+                             <p><strong>Patrimonio en Inventario (Costo):</strong> Bs ${totalPatrimony.toFixed(2)}</p>
+                        </div>
                     </div>
+
+                    <h3>Detalle de Ventas</h3>
                     <table>
                         <thead>
                             <tr><th>Fecha</th><th>Venta ID</th><th>Total</th></tr>
@@ -111,14 +129,14 @@ export const Reports = () => {
               <input type="date" className={inputClass} value={startDate} onChange={e => setStartDate(e.target.value)} />
               <span className="text-gray-500">-</span>
               <input type="date" className={inputClass} value={endDate} onChange={e => setEndDate(e.target.value)} />
-              <Button onClick={handlePrint} className="ml-2"><Printer className="w-4 h-4 mr-2"/> Imprimir</Button>
+              <Button onClick={handlePrint} className="ml-2"><Printer className="w-4 h-4 mr-2"/> Imprimir Reporte</Button>
           </div>
       </div>
 
       <div id="printable-report" className="hidden"></div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <div className="bg-white p-6 rounded-lg shadow border-l-4 border-teal-500">
               <div className="flex justify-between items-center">
                   <div>
@@ -135,6 +153,15 @@ export const Reports = () => {
                       <h3 className="text-2xl font-bold text-gray-800">Bs {estimatedProfit.toFixed(2)}</h3>
                   </div>
                   <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">%</div>
+              </div>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow border-l-4 border-purple-500">
+              <div className="flex justify-between items-center">
+                  <div>
+                      <p className="text-gray-500 text-sm font-bold text-purple-700">Patrimonio (Inventario)</p>
+                      <h3 className="text-2xl font-bold text-gray-800">Bs {totalPatrimony.toFixed(2)}</h3>
+                  </div>
+                  <Wallet className="h-8 w-8 text-purple-200" />
               </div>
           </div>
           <div className="bg-white p-6 rounded-lg shadow border-l-4 border-orange-500">
