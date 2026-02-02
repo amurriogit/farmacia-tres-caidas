@@ -61,11 +61,11 @@ export const Inventory = () => {
   }
 
   const handleExport = () => {
-    const headers = ["ID", "Nombre", "Forma", "Contenido", "Linea", "Precio", "Cantidad", "Lote", "Vence", "Ubicacion", "Codigo", "Min", "Max"];
+    const headers = ["ID", "Nombre", "Forma", "Contenido", "Linea", "Costo", "Precio", "Cantidad", "Lote", "Vence", "Ubicacion", "Codigo", "Min", "Max"];
     const csvContent = [
         headers.join(","),
         ...products.map(p => [
-            p.id, p.name, p.form, p.content, p.line, p.price, p.quantity, p.batch, p.expiryDate, p.location, p.barcode, p.minStock, p.maxStock
+            p.id, p.name, p.form, p.content, p.line, p.cost, p.price, p.quantity, p.batch, p.expiryDate, p.location, p.barcode, p.minStock, p.maxStock
         ].map(f => `"${f}"`).join(","))
     ].join("\n");
 
@@ -97,9 +97,9 @@ export const Inventory = () => {
                    newProducts.push({
                        id: '',
                        name: cols[1], form: cols[2], content: cols[3], line: cols[4],
-                       price: Number(cols[5]), cost: 0, quantity: Number(cols[6]),
-                       batch: cols[7], expiryDate: cols[8], location: cols[9], barcode: cols[10],
-                       minStock: Number(cols[11]), maxStock: Number(cols[12])
+                       price: Number(cols[6]), cost: Number(cols[5]) || 0, quantity: Number(cols[7]),
+                       batch: cols[8], expiryDate: cols[9], location: cols[10], barcode: cols[11],
+                       minStock: Number(cols[12]), maxStock: Number(cols[13])
                    });
               }
           });
@@ -111,18 +111,26 @@ export const Inventory = () => {
 
   const inputClass = "w-full rounded-md border-slate-600 shadow-sm focus:border-teal-500 focus:ring-teal-500 border px-4 py-3 text-white bg-slate-800 focus:bg-slate-900 placeholder-gray-400 font-medium transition-all";
 
-  // Configuration for form fields with helpers and optional flag
+  // CONFIGURACIÓN DE CAMPOS DEL FORMULARIO
+  // Nota: He cambiado el orden y la etiqueta para asegurar que se note el cambio visualmente
   const formFields = [
     { label: 'Nombre Producto', key: 'name', type: 'text', col: 'col-span-2', placeholder: 'Ej: Amoxicilina 500mg' },
     { label: 'Código Barras (Opcional)', key: 'barcode', type: 'text', col: 'col-span-1', required: false, placeholder: 'Escanear o vacío' },
+    
     { label: 'Forma Farmacéutica', key: 'form', type: 'text', placeholder: 'Ej: Comprimido, Jarabe' },
-    { label: 'Contenido', key: 'content', type: 'text', placeholder: 'Ej: 500mg, 100ml' },
     { label: 'Línea Comercial', key: 'line', type: 'text', placeholder: 'Ej: Vita, Inti' },
-    { label: 'Precio Venta (Bs)', key: 'price', type: 'number', step: '0.01', placeholder: '0.00' },
+    { label: 'Contenido', key: 'content', type: 'text', placeholder: 'Ej: 500mg, 100ml' },
+
+    // AQUÍ ESTÁ EL CAMBIO IMPORTANTE:
+    { label: 'COSTO DE COMPRA (Bs)', key: 'cost', type: 'number', step: '0.01', placeholder: '0.00' },
+    { label: 'PRECIO VENTA (Bs)', key: 'price', type: 'number', step: '0.01', placeholder: '0.00' },
+    
     { label: editingProduct ? 'Cantidad en Stock' : 'Cantidad a Ingresar', key: 'quantity', type: 'number', disabled: !!editingProduct, placeholder: '0' },
+    
     { label: 'Lote', key: 'batch', type: 'text', placeholder: 'Ej: L-202305' },
     { label: 'Fecha Vencimiento', key: 'expiryDate', type: 'date', placeholder: '' },
     { label: 'Ubicación', key: 'location', type: 'text', placeholder: 'Ej: Estante A, Fila 1' },
+    
     { label: 'Stock Mínimo', key: 'minStock', type: 'number', placeholder: 'Ej: 10' },
     { label: 'Stock Máximo', key: 'maxStock', type: 'number', placeholder: 'Ej: 100' },
   ];
@@ -159,7 +167,7 @@ export const Inventory = () => {
         <table className="min-w-full divide-y divide-gray-300">
           <thead className="bg-gray-100">
             <tr>
-              {['Nombre', 'Presentación', 'Lote/Vence', 'Stock', 'Precio (Bs)', 'Ubicación', 'Acciones'].map((h) => (
+              {['Nombre', 'Presentación', 'Lote/Vence', 'Stock', 'Costo', 'Precio', 'Acciones'].map((h) => (
                 <th key={h} className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
@@ -186,11 +194,11 @@ export const Inventory = () => {
                     {product.quantity}
                   </div>
                 </td>
-                <td className="px-6 py-5 whitespace-nowrap text-base text-gray-900 font-bold">
-                  {product.price.toFixed(2)}
+                <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-600 font-medium">
+                  Bs {product.cost ? product.cost.toFixed(2) : '0.00'}
                 </td>
-                 <td className="px-6 py-5 whitespace-nowrap text-sm text-gray-600 font-medium">
-                  {product.location}
+                <td className="px-6 py-5 whitespace-nowrap text-base text-gray-900 font-bold">
+                  Bs {product.price.toFixed(2)}
                 </td>
                 <td className="px-6 py-5 whitespace-nowrap text-sm font-medium">
                   <button onClick={() => handleOpenModal(product)} className="text-teal-700 hover:text-teal-900 p-2"><Edit className="w-5 h-5" /></button>
@@ -217,7 +225,7 @@ export const Inventory = () => {
             <form onSubmit={handleSubmit} className="p-8 grid grid-cols-1 md:grid-cols-3 gap-8">
                 {formFields.map((field: any) => (
                     <div key={field.key} className={field.col || ''}>
-                        <label className="block text-sm font-bold text-gray-800 mb-2 tracking-wide">{field.label}</label>
+                        <label className="block text-sm font-bold text-gray-800 mb-2 tracking-wide uppercase">{field.label}</label>
                         <input
                             type={field.type}
                             step={field.step}
